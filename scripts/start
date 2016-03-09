@@ -26,7 +26,7 @@ echo "Using goreman to start lfs-server-go"
 
 # set the config, if not set
 : ${LFS_SERVER_GO_CONFIG:=config.ini}
-
+export LFS_SERVER_GO_CONFIG
 if [[ ! -f "${LFS_SERVER_GO_CONFIG}" ]];then
   echo "LFS_SERVER_GO_CONFIG is not set, copying in example"
   # copy over a config if one does not exist

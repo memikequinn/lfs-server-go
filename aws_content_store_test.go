@@ -3,15 +3,16 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 )
 
 var awsContentStore *AwsContentStore
+var oid = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
 
 func TestAwsContentStorePut(t *testing.T) {
 	setupAwsTest()
@@ -78,12 +79,13 @@ func TestAwsContentStoreGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
+	content := []byte("test content")
 	m := &MetaObject{
 		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
 		Size: 12,
 	}
 
-	b := bytes.NewBuffer([]byte("test content"))
+	b := bytes.NewBuffer(content)
 
 	if err := awsContentStore.Put(m, b); err != nil {
 		t.Fatalf("expected put to succeed, got: %s", err)
@@ -91,13 +93,63 @@ func TestAwsContentStoreGet(t *testing.T) {
 
 	r, err := awsContentStore.Get(m)
 	if err != nil {
-		t.Fatalf("expected get to succeed, got: %s", err)
+		t.Fatalf("expected get to succeed, got: '%s'", err)
 	}
 
-	by, _ := ioutil.ReadAll(r)
-	if string(by) != "test content" {
-		t.Fatalf("expected to read content, got: %s", string(by))
+	by, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Fatalf("Err: '%v'", err.Error())
 	}
+
+	if string(by) != "test content" {
+		t.Fatalf("expected to read content, got: '%s'", string(by))
+	}
+
+	// Failures
+	if _, ferr := awsContentStore.Get(&MetaObject{Oid: "Nothing really here", Size: 1}); ferr == nil {
+		t.Fatalf("Expected an error but got nothing")
+	}
+
+}
+
+func TestAwsContentStoreGetWithPublicAcl(t *testing.T) {
+	setupAwsTest()
+	defer teardownAwsTest()
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	Config.Aws.BucketAcl = "public-read"
+	content := []byte("test content")
+	m := &MetaObject{
+		Oid:  "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72",
+		Size: 12,
+	}
+
+	b := bytes.NewBuffer(content)
+
+	if err := awsContentStore.Put(m, b); err != nil {
+		t.Fatalf("expected put to succeed, got: %s", err)
+	}
+
+	r, err := awsContentStore.Get(m)
+	if err != nil {
+		t.Fatalf("expected get to succeed, got: '%s'", err)
+	}
+
+	by, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Fatalf("Err: '%v'", err.Error())
+	}
+
+	if string(by) != "test content" {
+		t.Fatalf("expected to read content, got: '%s'", string(by))
+	}
+
+	// Failures
+	if _, ferr := awsContentStore.Get(&MetaObject{Oid: "Nothing really here", Size: 1}); ferr == nil {
+		t.Fatalf("Expected an error but got nothing")
+	}
+
 }
 
 func TestAwsContentStoreGetNonExisting(t *testing.T) {
@@ -138,52 +190,45 @@ func TestAwsContentStoreExists(t *testing.T) {
 	}
 }
 
-func TestAwsSettings(t *testing.T) {
+func TestAwsAcls(t *testing.T) {
 	setupAwsTest()
 	defer teardownAwsTest()
 	Config.Aws.BucketAcl = "private"
 	awsContentStore.setAcl()
-	if awsContentStore.acl != s3.Private {
+	if awsContentStore.acl != s3.BucketCannedACLPrivate {
 		t.Fatalf("Should have been set to private, but got %s", awsContentStore.acl)
 	}
 	Config.Aws.BucketAcl = "public-read"
 	awsContentStore.setAcl()
-	if awsContentStore.acl != s3.PublicRead {
+	if awsContentStore.acl != s3.BucketCannedACLPublicRead {
 		t.Fatalf("Should have been set to public-read, but got %s", awsContentStore.acl)
 	}
 	Config.Aws.BucketAcl = "public-read-write"
 	awsContentStore.setAcl()
-	if awsContentStore.acl != s3.PublicReadWrite {
+	if awsContentStore.acl != s3.BucketCannedACLPublicReadWrite {
 		t.Fatalf("Should have been set to public-read-write, but got %s", awsContentStore.acl)
 	}
 	Config.Aws.BucketAcl = "authenticated-read"
 	awsContentStore.setAcl()
-	if awsContentStore.acl != s3.AuthenticatedRead {
+	if awsContentStore.acl != s3.BucketCannedACLAuthenticatedRead {
 		t.Fatalf("Should have been set to authenticated-read, but got %s", awsContentStore.acl)
-	}
-	Config.Aws.BucketAcl = "bucket-owner-read"
-	awsContentStore.setAcl()
-	if awsContentStore.acl != s3.BucketOwnerRead {
-		t.Fatalf("Should have been set to bucket-owner-read, but got %s", awsContentStore.acl)
 	}
 	Config.Aws.BucketAcl = "bucket-owner-full-control"
 	awsContentStore.setAcl()
-	if awsContentStore.acl != s3.BucketOwnerFull {
+	if awsContentStore.acl != s3.ObjectCannedACLBucketOwnerFullControl {
 		t.Fatalf("Should have been set to bucket-owner-full-control, but got %s", awsContentStore.acl)
 	}
 }
 
-func awsConnectForTest() *s3.Bucket {
+func clientSession() *s3.S3 {
 	os.Setenv("AWS_ACCESS_KEY_ID", Config.Aws.AccessKeyId)
 	os.Setenv("AWS_SECRET_ACCESS_KEY", Config.Aws.SecretAccessKey)
-	auth, err := aws.EnvAuth()
-	perror(err)
-	return s3.New(auth, aws.Regions[Config.Aws.Region]).Bucket(Config.Aws.BucketName)
+	session := session.New(&aws.Config{Region: &Config.Aws.Region})
+	client := s3.New(session)
+	return client
 }
 
 func setupAwsTest() {
-	bucket := awsConnectForTest()
-	bucket.PutBucket(s3.Private)
 	store, err := NewAwsContentStore()
 	if err != nil {
 		fmt.Printf("error initializing content store: %s\n", err)
@@ -193,27 +238,7 @@ func setupAwsTest() {
 }
 
 func teardownAwsTest() {
-	bucket := awsConnectForTest()
-	// remove all bucket contents
-	items, err := bucket.List("", "", "", 1000)
-	if err != nil {
-		return
-	}
-	delItems := make([]string, 0)
-	if len(items.Contents) > 0 {
-		for _, item := range items.Contents {
-			if len(item.Key) < 1 {
-				continue
-			}
-			if strings.Contains(item.Key, "a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72") {
-				delItems = append(delItems, item.Key)
-			}
-		}
-	}
-	if len(delItems) > 0 {
-		oops := bucket.MultiDel(delItems)
-		if oops != nil {
-			fmt.Println("Oops", oops)
-		}
-	}
+	client := clientSession()
+	client.DeleteObject(&s3.DeleteObjectInput{Bucket: &Config.Aws.BucketName, Key: aws.String(transformKey(oid))})
+	client.WaitUntilObjectNotExists(&s3.HeadObjectInput{Bucket: &Config.Aws.BucketName, Key: aws.String(transformKey(oid))})
 }

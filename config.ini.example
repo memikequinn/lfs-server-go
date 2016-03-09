@@ -1,86 +1,164 @@
 [Main]
-; Port to listen on
+
+# Start mandatory settings
+######
+#
+# Listen Address
+#
+######
+# Port to listen on
 Listen = tcp://:9999
-; Host address - used for downloading
+# Host address -
+# 	used for downloading, so set to something accessible that you'll want users to hit
 Host = 127.0.0.1:9999
-; login for the admin user
-AdminUser = admin_username
-AdminPass = admin_password
-; path to ssl certificate
-;Cert = somekey.crt
-; path to ssl key
-;Key = somekey.key
-Scheme = http
-; Should the contents be public?
-Public = true
-; Database Configuration
-; path to database file to use.
-; Not used when both AWS storage and LDAP are enabled
-MetaDB = lfs.db
-; Content Store Configuration
-; Where to store the content on disk. Not used when AWS storage is enabled
-ContentPath = lfs_content
-;ContentStore options are [aws,filesystem]
-ContentStore = filesystem
-; BackingStore options are [cassandra, bolt]
-; bolt requires no external services
-BackingStore = bolt
-; NumProcs defaults to the number of processors available to the system
-; based on what runtime.NumCPU() returns
-; NumProcs = <some number>
 
-; Cassandra section is optional - but suggested for large deployments
+######
+#
+# Admin user
+#
+######
+AdminUser = admin
+AdminPass = admin
+
+# End mandatory settings
+
+
+######
+#
+# SSL
+#
+######
+# Cert - Path to ssl certificate
+# Default:
+;       Cert =
+# Key - path to ssl key
+# Default:
+;       Key =
+# Scheme -
+#   One of http or https
+# Default:
+;       Scheme = http
+
+# Should the contents be public?  Boolean
+# Default:
+;     Public = true
+
+######
+#
+# Local Database Configuration
+#
+######
+# MetaDB:
+# 	path to database file to use.
+# Default:
+;		 MetaDB = lfs.db
+
+######
+#
+# Content Store Configuration
+# Where to store the content on disk. Not used when AWS storage is enabled
+#
+######
+# Default:
+;		 ContentPath = lfs-content
+
+
+######
+#
+# Cassandra Configuration
+# Distributed storage for large numbers of objects
+# Optional - for storing meta content in Cassandra
+#
+######
 [Cassandra]
-Enabled = false
-; Optional - for storing meta content in Cassandra
-; comma separated
-Hosts = localhost:9042, anotherhost:9042
-; Optional - used to select cassandra keyspace
-; Defaults to lfs_server_go_GO_ENV, if GO_ENV is not set,
-; Keyspace = lfs_server_go
-;Username =
-;Password =
+# Enabled - Should we use Cassandra? (Boolean)
+# Default:
+;		Enabled = false
 
-; LDAP section is optional - but suggested for large deployments
+# Hosts:
+#   Comma separated list of host:port, host:port
+#  Default:
+;       Hosts = "
+# for a local setup, use:
+;       Hosts = localhost:9042
+# Optional - used to select cassandra keyspace,
+# 	the GO_ENV will always be appended, so dont add it here
+#   example: if your Keyspace is lfs_server_go, and your GO_ENV=development
+# 		the Keyspace will be stored as lfs_server_go_development
+# Default:
+;				KeySpace = to lfs_server_go
+#	Username =
+#	Password =
+
+
+######
+#
+# LDAP Configuration
+# Optional - for using LDAP instead of a local username/password scheme
+#
+######
 [Ldap]
-Enabled = false
-; LDAP configuration - Optional
-;Server = ldap://localhost:1389
-; true/false
-;Base = ou=people,o=mycompany
-;UserObjectClass = person
-;UserCn = uid
+# Enabled - Should we use LDAP (Boolean)
+# Default:
+;		Enabled = false
+# Server URL to use
+# Default:
+;       Server = ldap://localhost:1389
+# Base - Search Base of your LDAP config, like dc=example,dc=com
+# Default:
+;		Base = "dc=testers,c=test,o=company"
+# Class to use, does not (yet) support filters, just a string
+# Default:
+;		UserObjectClass = "person"
+# The Cn to use when matching a "User ID"
+# Default:
+;		UserCn = "uid"
+# The DN to use when binding
+# Default:
+;		BindDN = ""
+# The Password of the DN to use when binding
+# Default:
+;		BindPass = ""
 
-; AWS is optional, but useful
+######
+#
+# AWS Configuration
+# This is optional
+# It will also work with S3 Compatible interfaces when you specify the EndpointUrl
+#
+######
+
 [Aws]
-Enabled = false
-AccessKeyId = your-access-key-id
-SecretAccessKey = your-secret-access-key
-; AWS Configuration - Optional, unless you're using aws for the content store
-;AwsAccessKeyId = your-access-key
-;AwsSecretAccessKey = your-secret-key
-;Regions:
-;cn-north-1
-;sa-east-1
-;ap-northeast-1
-;ap-northeast-2
-;ap-southeast-1
-;eu-central-1
-;eu-west-1
-;us-west-2
-;us-west-1
-;us-east-1
-;us-gov-west-1
-Region = us-east-1
-;This should be a pre-existing bucket
-;We try to create it but the response is not always fast enough
-BucketName = lfs-server-go-objects
-;Acl options:
-;bucket-owner-full-control
-;bucket-owner-read
-;authenticated-read
-;public-read-write
-;public-read
-;private
-BucketAcl = bucket-owner-full-control
+# Enabled - Should we be using Aws, Boolean
+# Default:
+;     Enabled = false
+# The Access Key ID to use when authenticating to S3
+# Default:
+;		AwsAccessKeyId = ""
+
+# The Access Key Secret to use when authenticating to S3
+# Default:
+;		AwsSecretAccessKey = ""
+
+# Regions are where S3 will store your data
+# for region info, see http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+# Default:
+;		Region = us-east-1
+
+# Bucket is the container where your objects will be stored
+# This should be a pre-existing bucket, but we'll try to create it.
+# Default:
+;		BucketName = lfs-server-go-objects
+
+# Acl options:
+#		bucket-owner-full-control
+#		bucket-owner-read
+#		authenticated-read
+#		public-read-write
+#		public-read
+#		private
+# Default:
+;		BucketAcl = private
+# Default:
+;		EndpointUrl = https://s3-us-west-1.amazonaws.com
 

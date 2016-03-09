@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	"gopkg.in/ini.v1"
+	"log"
 	"os"
 	"runtime"
 	"strings"
@@ -24,6 +25,7 @@ type AwsConfig struct {
 	BucketName      string `json:"bucketname"`
 	BucketAcl       string `json:"bucketacl"`
 	Enabled         bool   `json:"enabled"`
+	EndpointUrl     string `json:""`
 }
 
 type LdapConfig struct {
@@ -68,6 +70,14 @@ func (c *Configuration) IsPublic() bool {
 	return Config.Public
 }
 
+func (c *Configuration) IsAwsEnabled() bool {
+	return c.Aws.Enabled
+}
+
+func (c *Configuration) IsLdapEnabled() bool {
+	return c.Ldap.Enabled
+}
+
 // Config is the global app configuration
 //var Config = &Configuration{}
 var GoEnv = os.Getenv("GO_ENV")
@@ -78,15 +88,16 @@ var Config = &Configuration{}
 func init() {
 	configFile := os.Getenv("LFS_SERVER_GO_CONFIG")
 	if configFile == "" {
-		fmt.Println("LFS_SERVER_GO_CONFIG is not set, Using config file %v", configFile)
+		fmt.Printf("LFS_SERVER_GO_CONFIG is not set, Using config file ./config.ini\n")
 		configFile = "config.ini"
 	}
 
 	cfg, err := ini.Load(configFile)
 	if err != nil {
-		panic(fmt.Sprintf("unable to read config.ini, %v", err))
+		panic(fmt.Sprintf("unable to read %s, %v", configFile, err))
 	}
 	if GoEnv == "" {
+		log.Printf("GO_ENV not set, using 'production'")
 		GoEnv = "production"
 	}
 
@@ -105,11 +116,13 @@ func init() {
 	awsConfig := &AwsConfig{
 		AccessKeyId:     "",
 		SecretAccessKey: "",
-		Region:          "USWest",
+		Region:          "us-east-1",
 		BucketName:      "lfs-server-go-objects",
-		BucketAcl:       "bucket-owner-full-control",
+		BucketAcl:       "private",
 		Enabled:         false,
+		EndpointUrl:     "",
 	}
+
 	ldapConfig := &LdapConfig{
 		Server:          "ldap://localhost:1389",
 		Base:            "dc=testers,c=test,o=company",
@@ -119,6 +132,7 @@ func init() {
 		BindDn:          "",
 		BindPass:        "",
 	}
+
 	cassandraConfig := &CassandraConfig{
 		Hosts:    "localhost",
 		Keyspace: "lfs_server_go",
@@ -126,10 +140,10 @@ func init() {
 		Password: "",
 		Enabled:  false,
 	}
+
 	configuration := &Configuration{
 		Listen:       "tcp://:8080",
 		Host:         "localhost:8080",
-		UrlContext:   "",
 		ContentPath:  "lfs-content",
 		AdminUser:    "admin",
 		AdminPass:    "admin",
@@ -137,7 +151,7 @@ func init() {
 		Key:          "",
 		Scheme:       "http",
 		Public:       true,
-		MetaDB:       "lfs-test.db",
+		MetaDB:       "lfs.db",
 		BackingStore: "bolt",
 		ContentStore: "filesystem",
 		NumProcs:     runtime.NumCPU(),
@@ -145,10 +159,17 @@ func init() {
 		Aws:          awsConfig,
 		Cassandra:    cassandraConfig,
 	}
+
 	err = cfg.Section("Main").MapTo(configuration)
 	err = cfg.Section("Aws").MapTo(configuration.Aws)
 	err = cfg.Section("Ldap").MapTo(configuration.Ldap)
 	err = cfg.Section("Cassandra").MapTo(configuration.Cassandra)
+	if configuration.Cassandra.Enabled {
+		configuration.BackingStore = "cassandra"
+	}
+	if configuration.Aws.Enabled {
+		configuration.ContentStore = "aws"
+	}
 	Config = configuration
 }
 

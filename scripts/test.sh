@@ -7,6 +7,7 @@ ldap_pid=""
 base=$(dirname $0)/../
 cd $base
 godep > /dev/null 2>&1 || go get github.com/tools/godep
+godep save ./...
 if [[ ! "`ps -ef | grep '[t]est_ldap_server'`" ]] ; then
   echo "Starting LDAP server"
   cd test_ldap_server
@@ -19,16 +20,21 @@ fi
 godep restore
 # space delimiter
 prereqs="cassandra"
+FAIL=0
 for p in $prereqs; do
   lf="`echo [$(echo $p | cut -b1)]${p:1}`"
   if [[ "x`ps -ef |grep $lf`" == "x" ]];then
+  	FAIL=$((FAIL + 1))
    echo "$p does not look to be running, tests will fail"
   fi
 done
+[[ $FAIL -gt 0 ]] && echo "${FAIL} errors caused tests to be aborted"
+: ${LFS_SERVER_GO_CONFIG:=config.ini}
+export LFS_SERVER_GO_CONFIG
 go fmt ./...
-mkdir -p $base/coverage
-godep go test -coverprofile=$base/coverage/cover.out -covermode=count $*
-godep go tool cover -html=$base/coverage/cover.out
+mkdir -p ${base}/coverage
+godep go test -coverprofile=${base}/coverage/cover.out -covermode=count $*
+godep go tool cover -html=${base}/coverage/cover.out
 resp=$?
 
 if [[ "x${ldap_pid}" != "x" ]]; then

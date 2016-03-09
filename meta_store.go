@@ -78,7 +78,7 @@ func (s *MetaStore) Get(rv *RequestVars) (*MetaObject, error) {
 	})
 
 	if err != nil {
-		logger.Log(kv{"fn": "meta_store", "msg": err.Error()})
+		logger.Log(kv{"fn": "MetaStore.Get", "error": ": " + err.Error()})
 		return nil, err
 	}
 
@@ -163,7 +163,7 @@ func (s *MetaStore) Put(rv *RequestVars) (*MetaObject, error) {
 	if rv.Repo != "" {
 		err := s.createProject(rv)
 		if err != nil {
-			logger.Log(kv{"fn": "Put", "err": err.Error()})
+			logger.Log(kv{"fn": "MetaStore.Put", "error": ": " + err.Error()})
 			return nil, err
 		}
 	}
@@ -286,6 +286,7 @@ func (s *MetaStore) Objects() ([]*MetaObject, error) {
 // or not to proceed. This server assumes an HTTP Basic auth format.
 func (s *MetaStore) authenticate(authorization string) bool {
 	if Config.IsPublic() {
+		logger.Log(kv{"info": "Its public"})
 		return true
 	}
 
@@ -298,7 +299,7 @@ func (s *MetaStore) authenticate(authorization string) bool {
 	}
 	c, err := base64.URLEncoding.DecodeString(strings.TrimPrefix(authorization, "Basic "))
 	if err != nil {
-		logger.Log(kv{"fn": "meta_store.authenticate", "msg": err.Error()})
+		logger.Log(kv{"fn": "MetaStore.authenticate", "error": ": " + err.Error()})
 		return false
 	}
 	cs := string(c)
@@ -323,7 +324,7 @@ func (s *MetaStore) authenticate(authorization string) bool {
 	})
 	match, err := checkPass([]byte(value), []byte(password))
 	if err != nil {
-		logger.Log(kv{"fn": "meta_store.authenticate", "msg": fmt.Sprintf("Decrypt error: %s", err.Error())})
+		logger.Log(kv{"fn": "meta_store.authenticate", "error": ": " + fmt.Sprintf("Decrypt error: %s", err.Error())})
 	}
 	return match
 }

@@ -10,6 +10,46 @@
 			"Rev": "42fe5e1e4e358b413e3e1a7b2243ec8599209107"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/endpoints",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/signer/v4",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/waiter",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/s3",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/vendor/github.com/go-ini/ini",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/vendor/github.com/jmespath/go-jmespath",
+			"Comment": "v1.1.8-3-g84dd236",
+			"Rev": "84dd2369d1041b2c79c67bc81bba00636711d01b"
+		},
+		{
 			"ImportPath": "github.com/bmizerany/assert",
 			"Comment": "release.r60-6-ge17e998",
 			"Rev": "e17e99893cb6509f428e1728281c2ad60a6b31e3"
@@ -62,14 +102,6 @@
 			"Rev": "6807e777504f54ad073ecef66747de158294b639"
 		},
 		{
-			"ImportPath": "github.com/mitchellh/goamz/aws",
-			"Rev": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf"
-		},
-		{
-			"ImportPath": "github.com/mitchellh/goamz/s3",
-			"Rev": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf"
-		},
-		{
 			"ImportPath": "github.com/nmcclain/asn1-ber",
 			"Rev": "ec51d5ed21377b4023ca7b1e70ae4cb296ee6047"
 		},
@@ -80,10 +112,6 @@
 		{
 			"ImportPath": "github.com/relops/cqlr",
 			"Rev": "0ac35893ea3f1e4ee717ba838972b70a0943f7d7"
-		},
-		{
-			"ImportPath": "github.com/vaughan0/go-ini",
-			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/bcrypt",

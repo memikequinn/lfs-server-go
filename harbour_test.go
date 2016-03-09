@@ -320,7 +320,8 @@ func TestMain(m *testing.M) {
 	os.Remove("lfs-test.db")
 	Config.Ldap.Enabled = false
 	var err error
-	testMetaStore, err = NewMetaStore(Config.MetaDB)
+	fmt.Printf("Creating meta store %v\n", "lfs-test.db")
+	testMetaStore, err = NewMetaStore("lfs-test.db")
 	if err != nil {
 		fmt.Printf("Error creating meta store: %s", err)
 		os.Exit(1)
